@@ -29,6 +29,7 @@ class GameApiControllerSpec extends BaseSpec {
 
         then:
         assert fetchedGame.frame == 1
+        assert fetchedGame.nextMaxRoll == 10
         assert fetchedGame.currentPlayerId == fetchedGame.players.get(0).id
         assert fetchedGame.players.size() == 2
         assert fetchedGame.players.get(0).score == 0
@@ -48,6 +49,31 @@ class GameApiControllerSpec extends BaseSpec {
     def "should return not found when game does not exist"() {
         when:
         client.getGame(aRandom.uuid(), status().isNotFound())
+
+        then:
+        noExceptionThrown()
+    }
+
+    def "should validate roll"() {
+        given:
+        Player player1 = Player.builder().name(aRandom.name().firstName()).build()
+        Game game = Game.builder().nextMaxRoll(5).players([player1]).build()
+        Game createdGame = client.responseToClass(client.createGame(game), Game.class)
+
+        when: "wrong player"
+        client.createRoll(createdGame.id, aRandom.uuid(), Roll.builder().build(), status().isBadRequest())
+
+        then:
+        noExceptionThrown()
+
+        when: "wrong frame"
+        client.createRoll(createdGame.id, aRandom.uuid(), Roll.builder().frame(2).build(), status().isBadRequest())
+
+        then:
+        noExceptionThrown()
+
+        when: "bad roll"
+        client.createRoll(createdGame.id, aRandom.uuid(), Roll.builder().pins(6).build(), status().isBadRequest())
 
         then:
         noExceptionThrown()

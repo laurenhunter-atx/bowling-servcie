@@ -25,6 +25,7 @@ public class GameService {
     public GameEntity createGame(GameEntity game) {
         validateGame(game);
         game.setFrame(1);
+        game.setNextMaxRoll(10);
         game.setPlayers(game.getPlayers().stream().peek(player -> player.setGame(game)).collect(Collectors.toList()));
         return gameRepository.save(game);
     }
@@ -36,13 +37,13 @@ public class GameService {
     public RollEntity roll(UUID gameId, UUID playerId, RollEntity roll) {
         GameEntity game = gameRepository.findOneByIdForUpdate(gameId).orElseThrow(EntityNotFoundException::new);
         PlayerEntity player = game.getPlayers().get(game.getCurrentPlayerIndex());
-        validateRoll(player, playerId, roll, game.getFrame());
+        validateRoll(player, playerId, roll, game.getFrame(), game.getNextMaxRoll());
 
         List<RollEntity> playerRolls = player.getRolls();
         RollEntity previousRoll = playerRolls.isEmpty() ? RollEntity.builder().build() : playerRolls.get(playerRolls.size() - 1);
         roll.setPlayer(player);
-        roll.setStrike(roll.getPins() == 10);
-        roll.setSpare(rollASpare(previousRoll, roll));
+        roll.setStrike(rollIsStrike(roll));
+        roll.setSpare(rollIsSpare(previousRoll, roll));
 
         gameRepository.save(updateGameStateForRoll(game, roll, previousRoll.isStrike()));
         return rollRepository.save(roll);
@@ -51,13 +52,14 @@ public class GameService {
     private GameEntity updateGameStateForRoll(GameEntity game, RollEntity roll, boolean prevRollIsStrike) {
         if (isNextPlayersTurn(roll, prevRollIsStrike)) {
             if (isNextFrame(game.getPlayers(), game.getCurrentPlayerIndex())) {
-                if (isLastFrame(game.getFrame())) {
-                    game.setGameComplete(true);
-                } else {
-                    game.setFrame(game.getFrame() + 1);
-                }
+                int frame = game.getFrame();
+                game.setGameComplete(isLastFrame(frame));
+                game.setFrame(nextFrame(frame));
             }
             game.setCurrentPlayerIndex(calculateNextPlayer(game.getPlayers(), game.getCurrentPlayerIndex()));
+            game.setNextMaxRoll(10);
+        } else {
+            game.setNextMaxRoll(10 - roll.getPins());
         }
         return game;
     }
@@ -84,21 +86,37 @@ public class GameService {
         }
     }
 
-    private void validateRoll(PlayerEntity playerEntity, UUID playerId, RollEntity rollEntity, int frame) {
+    private void validateRoll(PlayerEntity playerEntity, UUID playerId, RollEntity rollEntity, int frame, int nexMaxRoll) {
         if (!playerEntity.getId().equals(playerId)) {
             throw new ValidationException(String.format("wrong turn. it is %s's turn", playerEntity.getName()));
         }
-
         if (rollEntity.getFrame() != frame) {
             throw new ValidationException(String.format("wrong frame. current frame is ", frame));
         }
+        if(!rollIsValid(rollEntity.getPins(), nexMaxRoll)) {
+            throw new ValidationException(
+                    String.format("roll not valid. roll needs to be greater than 0 and less than or equal to ", nexMaxRoll)
+            );
+        }
     }
 
-    private boolean rollASpare(RollEntity prevRoll, RollEntity currRoll) {
+    private boolean rollIsSpare(RollEntity prevRoll, RollEntity currRoll) {
        return prevRoll.getPins() + currRoll.getPins() == 10 && !prevRoll.isStrike() && !currRoll.isStrike();
+    }
+
+    private boolean rollIsStrike(RollEntity rollEntity) {
+        return rollEntity.getPins() == 10;
     }
 
     private boolean isLastFrame(int frame) {
         return frame == 10;
+    }
+
+    private int nextFrame(int frame) {
+        return isLastFrame(frame) ? frame : frame + 1;
+    }
+
+    private boolean rollIsValid(int pins, int max) {
+        return pins >= 0 && pins <= max;
     }
 }

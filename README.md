@@ -23,6 +23,7 @@ curl https://localhost:8080/game/id
       "id": "uuid",
       "frame": 1,
       "currentPlayerId": "uuid",
+      "nextMaxRoll": 10,
       "isGameComplete": false,
       "players": [
           {
