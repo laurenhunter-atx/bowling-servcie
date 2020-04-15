@@ -1,5 +1,6 @@
 package bowling.service
 
+
 import bowling.entity.GameEntity
 import bowling.entity.PlayerEntity
 import bowling.entity.RollEntity
@@ -59,6 +60,50 @@ class GameServiceSpec extends Specification {
 
         then:
         thrown(ValidationException)
+    }
+
+    def "should add roll"() {
+        given:
+        PlayerEntity player1 = PlayerEntity.builder().id(aRandom.uuid()).build()
+        GameEntity game = GameEntity.builder()
+                .id(aRandom.uuid())
+                .players([player1])
+                .currentPlayerIndex(0)
+                .build()
+        gameRepository.findOneByIdForUpdate(*_) >> Optional.of(game)
+
+        and:
+        RollEntity roll = RollEntity.builder().frame(1).throwForFrame(1).pins(5).build()
+
+        when:
+        service.roll(game.id, player1.id, roll)
+
+        then:
+        1 * rollRepository.save(*_) >> { arguments ->
+            RollEntity saved = arguments.get(0)
+            assert saved.pins == 5
+            assert !saved.spare
+            assert !saved.strike
+            assert saved.throwForFrame == 1
+            assert saved.frame == 1
+        }
+
+        and:
+        player1.setRolls([roll])
+        RollEntity roll2 = RollEntity.builder().frame(1).throwForFrame(1).pins(5).build()
+
+        when:
+        service.roll(game.id, player1.id, roll2)
+
+        then:
+        1 * rollRepository.save(*_) >> { arguments ->
+            RollEntity saved = arguments.get(0)
+            assert saved.pins == 5
+            assert saved.spare
+            assert !saved.strike
+            assert saved.throwForFrame == 1
+            assert saved.frame == 1
+        }
     }
 
     @Unroll
@@ -131,7 +176,7 @@ class GameServiceSpec extends Specification {
 
         where:
         playerIndex | expectedPlayerIndex
-        0           | 1
+        0           | 0
         1           | 0
     }
 

@@ -5,7 +5,6 @@ import bowling.BowlingServiceClient
 import bowling.api.Game
 import bowling.api.Player
 import bowling.api.Roll
-import bowling.entity.RollEntity
 import org.springframework.beans.factory.annotation.Autowired
 
 import static bowling.ARandom.aRandom
@@ -73,5 +72,18 @@ class GameApiControllerSpec extends BaseSpec {
         assert updatedGame.currentPlayerId == updatedGame.getPlayers().get(0).id
         assert updatedGame.getPlayers().get(0).rolls == [roll]
         assert updatedGame.getPlayers().get(0).score == roll.pins
+
+        and:
+        Roll roll2 = Roll.builder().pins(10 - roll.pins).frame(1).throwForFrame(2).build()
+
+        when:
+        client.createRoll(createdGame.id, createdGame.currentPlayerId, roll2)
+        updatedGame = client.responseToClass(client.getGame(createdGame.id), Game.class)
+
+        then:
+        assert updatedGame.frame == 1
+        assert updatedGame.currentPlayerId == updatedGame.getPlayers().get(2).id
+        assert updatedGame.getPlayers().get(0).rolls == [roll, roll2]
+        assert updatedGame.getPlayers().get(0).score == roll.pins + roll2.pins
     }
 }

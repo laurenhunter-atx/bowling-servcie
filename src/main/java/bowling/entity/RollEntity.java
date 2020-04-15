@@ -27,9 +27,15 @@ public class RollEntity {
     @ManyToOne
     private PlayerEntity player;
 
-    private boolean strike;
-    private boolean spare;
-    private int pins;
+    @Builder.Default
+    private boolean strike = false;
+
+    @Builder.Default
+    private boolean spare = false;
+
+    @Builder.Default
+    private int pins = 0;
+
     private int frame;
     private int throwForFrame;
 }

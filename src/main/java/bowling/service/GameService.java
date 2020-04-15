@@ -36,11 +36,15 @@ public class GameService {
     public RollEntity roll(UUID gameId, UUID playerId, RollEntity roll) {
         GameEntity game = gameRepository.findOneByIdForUpdate(gameId).orElseThrow(EntityNotFoundException::new);
         PlayerEntity player = game.getPlayers().get(game.getCurrentPlayerIndex());
-
         validateRoll(player, playerId);
-        roll.setPlayer(player);
 
-        gameRepository.save(updateGameStateForRoll(game, roll, prevRollIsStrike(player.getRolls())));
+        List<RollEntity> playerRolls = player.getRolls();
+        RollEntity previousRoll = playerRolls.isEmpty() ? RollEntity.builder().build() : playerRolls.get(playerRolls.size() - 1);
+        roll.setPlayer(player);
+        roll.setStrike(roll.getPins() == 10);
+        roll.setSpare(previousRoll.getPins() + roll.getPins() == 10);
+
+        gameRepository.save(updateGameStateForRoll(game, roll, previousRoll.isStrike()));
         return rollRepository.save(roll);
     }
 
