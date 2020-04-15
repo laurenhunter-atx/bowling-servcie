@@ -75,6 +75,9 @@ task testIntegration(type: Test) {
 	outputs.upToDateWhen { false }
 }
 
+check.dependsOn testIntegration
+testIntegration.mustRunAfter test
+
 dockerCompose {
 	useComposeFiles = ['src/test-integration/resources/docker-compose.yml']
 	stopContainers = false

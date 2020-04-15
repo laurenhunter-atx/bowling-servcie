@@ -42,7 +42,7 @@ public class GameService {
         RollEntity previousRoll = playerRolls.isEmpty() ? RollEntity.builder().build() : playerRolls.get(playerRolls.size() - 1);
         roll.setPlayer(player);
         roll.setStrike(roll.getPins() == 10);
-        roll.setSpare(previousRoll.getPins() + roll.getPins() == 10);
+        roll.setSpare(isRollASpare(previousRoll, roll));
 
         gameRepository.save(updateGameStateForRoll(game, roll, previousRoll.isStrike()));
         return rollRepository.save(roll);
@@ -71,7 +71,7 @@ public class GameService {
     }
 
     private int calculateNextPlayer(List<PlayerEntity> players, int currentPlayerIndex) {
-        return currentPlayerIndex < players.size() - 1 ? currentPlayerIndex + 1 : 0;
+        return currentPlayerIndex < players.size() - 1  ? currentPlayerIndex + 1 : 0;
     }
 
     private void validateGame(GameEntity game) {
@@ -86,11 +86,11 @@ public class GameService {
         }
     }
 
-    private boolean isLastFrame(int frame) {
-        return frame == 10;
+    private boolean isRollASpare(RollEntity prevRoll, RollEntity currRoll) {
+       return prevRoll.getPins() + currRoll.getPins() == 10 && prevRoll.getPins() != 10;
     }
 
-    private boolean prevRollIsStrike(List<RollEntity> rolls) {
-        return !rolls.isEmpty() && rolls.get(rolls.size() - 1).isStrike();
+    private boolean isLastFrame(int frame) {
+        return frame == 10;
     }
 }

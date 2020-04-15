@@ -166,18 +166,38 @@ class GameServiceSpec extends Specification {
         10    | true             | 2             | false  | false | false  | '10th frame 2nd roll & strike'
     }
 
+    @Unroll
     def "should calculate next player index"() {
         given:
         PlayerEntity player1 = PlayerEntity.builder().build()
         PlayerEntity player2 = PlayerEntity.builder().build()
+        PlayerEntity player3 = PlayerEntity.builder().build()
 
         expect:
-        assert service.calculateNextPlayer([player1, player2], playerIndex) == expectedPlayerIndex
+        assert service.calculateNextPlayer([player1, player2, player3], currentPlayerIndex) == expectedPlayerIndex
 
         where:
-        playerIndex | expectedPlayerIndex
-        0           | 0
-        1           | 0
+        currentPlayerIndex | expectedPlayerIndex
+        0                  | 1
+        1                  | 2
+        3                  | 0
+    }
+
+    @Unroll
+    def "should compute if frame is spare"() {
+        given:
+        RollEntity prevRoll = RollEntity.builder().pins(prevPins).build()
+        RollEntity currentRoll = RollEntity.builder().pins(currPins).build()
+
+        expect:
+        assert service.isRollASpare(prevRoll, currentRoll) == isSpare
+
+        where:
+        prevPins | currPins | isSpare
+        10       | 10       | false
+        1        | 1        | false
+        0        | 10       | true
+        1        | 9        | true
     }
 
 }

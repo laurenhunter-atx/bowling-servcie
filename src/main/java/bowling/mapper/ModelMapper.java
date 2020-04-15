@@ -33,8 +33,6 @@ public abstract class ModelMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "player", ignore = true)
-    @Mapping(target = "strike", ignore = true)
-    @Mapping(target = "spare", ignore = true)
     public abstract RollEntity toRollEntity(Roll roll);
 
     public abstract Roll toRoll(RollEntity rollEntity);

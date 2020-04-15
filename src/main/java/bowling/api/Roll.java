@@ -13,4 +13,6 @@ public class Roll {
     private int pins;
     private int frame;
     private int throwForFrame;
+    private boolean strike;
+    private boolean spare;
 }

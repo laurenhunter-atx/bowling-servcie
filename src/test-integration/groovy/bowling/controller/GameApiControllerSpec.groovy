@@ -53,7 +53,7 @@ class GameApiControllerSpec extends BaseSpec {
         noExceptionThrown()
     }
 
-    def "should roll for player"() {
+    def "should advance game on roll"() {
         given:
         Player player1 = Player.builder().name(aRandom.name().firstName()).build()
         Player player2 = Player.builder().name(aRandom.name().firstName()).build()
@@ -70,8 +70,6 @@ class GameApiControllerSpec extends BaseSpec {
         then:
         assert updatedGame.frame == 1
         assert updatedGame.currentPlayerId == updatedGame.getPlayers().get(0).id
-        assert updatedGame.getPlayers().get(0).rolls == [roll]
-        assert updatedGame.getPlayers().get(0).score == roll.pins
 
         and:
         Roll roll2 = Roll.builder().pins(10 - roll.pins).frame(1).throwForFrame(2).build()
@@ -82,8 +80,38 @@ class GameApiControllerSpec extends BaseSpec {
 
         then:
         assert updatedGame.frame == 1
-        assert updatedGame.currentPlayerId == updatedGame.getPlayers().get(2).id
+        assert updatedGame.currentPlayerId == updatedGame.getPlayers().get(1).id
+    }
+
+    def "should play game"() {
+        given:
+        Player player1 = Player.builder().name(aRandom.name().firstName()).build()
+        Game game = Game.builder().players([player1]).build()
+        Game createdGame = client.responseToClass(client.createGame(game), Game.class)
+
+        and:
+        Roll roll = Roll.builder().pins(5).frame(1).throwForFrame(1).build()
+
+        when: "frame 1 roll 1 - 5"
+        client.createRoll(createdGame.id, createdGame.currentPlayerId, roll)
+        Game updatedGame = client.responseToClass(client.getGame(createdGame.id), Game.class)
+
+        then:
+        assert updatedGame.frame == 1
+        assert updatedGame.currentPlayerId == updatedGame.getPlayers().get(0).id
+        assert updatedGame.getPlayers().get(0).rolls == [roll]
+        assert updatedGame.getPlayers().get(0).score == 0
+
+        and:
+        Roll roll2 = Roll.builder().pins(3).frame(1).throwForFrame(2).build()
+
+        when: "frame 1 roll 2 - 3"
+        client.createRoll(createdGame.id, createdGame.currentPlayerId, roll2)
+        updatedGame = client.responseToClass(client.getGame(createdGame.id), Game.class)
+
+        then:
+        assert updatedGame.frame == 2
         assert updatedGame.getPlayers().get(0).rolls == [roll, roll2]
-        assert updatedGame.getPlayers().get(0).score == roll.pins + roll2.pins
+        assert updatedGame.getPlayers().get(0).score == 5 + 3
     }
 }
