@@ -1,5 +1,6 @@
 package bowling
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
@@ -13,6 +14,9 @@ import javax.annotation.PostConstruct
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @ActiveProfiles(["integration-test"])
 class BaseSpec extends Specification {
+
+    @Autowired
+    ObjectMapper objectMapper
 
     @Autowired
     protected WebApplicationContext context

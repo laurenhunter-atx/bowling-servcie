@@ -1,5 +1,6 @@
 package bowling.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -21,6 +22,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
+@JsonIgnoreProperties({"currentPlayerIndex"})
 public class GameEntity {
 
     @Id
@@ -29,7 +31,7 @@ public class GameEntity {
 
     private int frame;
 
-    private int currentPlayer;
+    private int currentPlayerIndex;
 
     @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<PlayerEntity> players;

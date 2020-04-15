@@ -7,7 +7,7 @@ import bowling.api.Player
 import org.springframework.beans.factory.annotation.Autowired
 
 import static bowling.ARandom.aRandom
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 class GameApiControllerSpec extends BaseSpec {
 
@@ -21,7 +21,7 @@ class GameApiControllerSpec extends BaseSpec {
         Game game = Game.builder().players([player1, player2]).build()
 
         when:
-        Game createdGame = client.createGame(game)
+        Game createdGame = client.responseToClass(client.createGame(game), Game.class)
 
         then:
         assert createdGame.frame == 0
@@ -34,10 +34,10 @@ class GameApiControllerSpec extends BaseSpec {
     }
 
     def "should throw exception if game contains no players"() {
-        given:
-        Game game = Game.builder().build()
+        when:
+        client.createGame(Game.builder().build(), status().isBadRequest())
 
         then:
-        client.createGame(game, status().isBadRequest())
+        noExceptionThrown()
     }
 }

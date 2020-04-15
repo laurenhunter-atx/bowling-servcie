@@ -30,14 +30,12 @@ class BowlingServiceClient {
     }
 
 
-    Game createGame(Game game, ResultMatcher expectedStatus = status().isCreated()) {
-        return objectMapper.convertValue(mvc.perform(
+    MockHttpServletResponse createGame(Game game, ResultMatcher expectedStatus = status().isCreated()) {
+        return mvc.perform(
                 post("${baseUri}/game")
                         .accept(APPLICATION_JSON)
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(game)))
-                .andDo(print()).andExpect(expectedStatus).andReturn().getResponse().getContentAsString(),
-                Game.class
-        )
+                .andDo(print()).andExpect(expectedStatus).andReturn().getResponse()
     }
 }
