@@ -62,13 +62,16 @@ class GameApiControllerSpec extends BaseSpec {
         Game createdGame = client.responseToClass(client.createGame(game), Game.class)
 
         and:
-        Roll roll = Roll.builder().pins(aRandom.intBetween(0, 10)).frame(1).throwForFrame(1).build()
+        Roll roll = Roll.builder().pins(aRandom.intBetween(0, 9)).frame(1).throwForFrame(1).build()
 
         when:
-        Roll createdRoll = client.responseToClass(client.createRoll(createdGame.id, createdGame.currentPlayerId, roll), Roll.class)
+        client.createRoll(createdGame.id, createdGame.currentPlayerId, roll)
+        Game updatedGame = client.responseToClass(client.getGame(createdGame.id), Game.class)
 
         then:
-        assert createdRoll.frame == 1
-        assert createdRoll.throwForFrame == 1
+        assert updatedGame.frame == 1
+        assert updatedGame.currentPlayerId == updatedGame.getPlayers().get(0).id
+        assert updatedGame.getPlayers().get(0).rolls == [roll]
+        assert updatedGame.getPlayers().get(0).score == roll.pins
     }
 }
