@@ -21,19 +21,19 @@ class GameApiControllerSpec extends BaseSpec {
         Game game = Game.builder().players([player1, player2]).build()
 
         and:
-        client.createGame(game)
+        Game createdGame = client.responseToClass(client.createGame(game), Game.class)
 
         when:
-        Game createdGame = client.responseToClass(client.getGame(game.id), Game.class)
+        Game fetchedGame = client.responseToClass(client.getGame(createdGame.id), Game.class)
 
         then:
-        assert createdGame.frame == 0
-        assert createdGame.currentPlayerId == createdGame.players.get(0).id
-        assert createdGame.players.size() == 2
-        assert createdGame.players.get(0).score == 0
-        assert createdGame.players.get(0).rolls.size() == 0
-        assert createdGame.players.get(1).score == 0
-        assert createdGame.players.get(1).rolls.size() == 0
+        assert fetchedGame.frame == 0
+        assert fetchedGame.currentPlayerId == fetchedGame.players.get(0).id
+        assert fetchedGame.players.size() == 2
+        assert fetchedGame.players.get(0).score == 0
+        assert fetchedGame.players.get(0).rolls.size() == 0
+        assert fetchedGame.players.get(1).score == 0
+        assert fetchedGame.players.get(1).rolls.size() == 0
     }
 
     def "should return bad request when game has no players"() {

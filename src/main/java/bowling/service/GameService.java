@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.EntityNotFoundException;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -23,7 +24,7 @@ public class GameService {
     }
 
     public GameEntity getGame(UUID id) {
-        return null;
+        return repository.findById(id).orElseThrow(EntityNotFoundException::new);
     }
 
     private void validateGame(GameEntity game) {
