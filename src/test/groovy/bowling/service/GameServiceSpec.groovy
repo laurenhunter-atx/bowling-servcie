@@ -62,6 +62,26 @@ class GameServiceSpec extends Specification {
         thrown(ValidationException)
     }
 
+    def "should throw validation exception when roll not valid"() {
+        given:
+        PlayerEntity player1 = PlayerEntity.builder().id(aRandom.uuid()).build()
+        PlayerEntity player2 = PlayerEntity.builder().id(aRandom.uuid()).build()
+        GameEntity game = GameEntity.builder()
+                .id(aRandom.uuid())
+                .currentPlayerIndex(0)
+                .nextMaxRoll(5)
+                .frame(1)
+                .players([player1, player2])
+                .build()
+        gameRepository.findOneByIdForUpdate(*_) >> Optional.of(game)
+
+        when:
+        service.roll(game.id, player1.id, RollEntity.builder().frame(1).pins(7).build())
+
+        then:
+        thrown(ValidationException)
+    }
+
     def "should add roll"() {
         given:
         PlayerEntity player1 = PlayerEntity.builder().id(aRandom.uuid()).build()
@@ -69,6 +89,7 @@ class GameServiceSpec extends Specification {
                 .id(aRandom.uuid())
                 .players([player1])
                 .currentPlayerIndex(0)
+                .nextThrowForFrame(1)
                 .frame(1)
                 .build()
         gameRepository.findOneByIdForUpdate(*_) >> Optional.of(game)
@@ -91,7 +112,7 @@ class GameServiceSpec extends Specification {
 
         and:
         player1.setRolls([roll])
-        RollEntity roll2 = RollEntity.builder().frame(1).throwForFrame(1).pins(5).build()
+        RollEntity roll2 = RollEntity.builder().frame(1).throwForFrame(2).pins(5).build()
 
         when:
         service.roll(game.id, player1.id, roll2)
@@ -102,7 +123,7 @@ class GameServiceSpec extends Specification {
             assert saved.pins == 5
             assert saved.spare
             assert !saved.strike
-            assert saved.throwForFrame == 1
+            assert saved.throwForFrame == 2
             assert saved.frame == 1
         }
     }
@@ -121,25 +142,26 @@ class GameServiceSpec extends Specification {
 
         and:
         RollEntity roll = RollEntity.builder()
-                .spare(spare)
-                .strike(strike)
                 .frame(frame)
+                .pins(pins)
                 .throwForFrame(throwForFrame)
                 .build()
 
         when:
-        GameEntity updatedGame = service.updateGameStateForRoll(game, roll, prevRollStrike)
+        GameEntity updatedGame = service.updateGameStateForRoll(game, roll, false)
 
         then:
         assert updatedGame.frame == expectedFrame
         assert updatedGame.currentPlayerIndex == expectedPlayerIndex
+        assert updatedGame.nextMaxRoll == nextMaxRoll
+        assert updatedGame.nextThrowForFrame == nextThrow
 
         where:
-        prevRollStrike | spare | strike | playerIndex | frame | throwForFrame | expectedFrame | expectedPlayerIndex | gameComplete | desc
-        false          | false | false  | 0           | 1     | 1             | 1             | 0                   | false        | 'not next turn'
-        false          | false | false  | 0           | 1     | 2             | 1             | 1                   | false        | 'is next turn'
-        false          | false | false  | 1           | 1     | 2             | 2             | 0                   | false        | 'is next frame'
-        false          | false | false  | 1           | 10    | 2             | 10            | 0                   | true         | 'last frame'
+         pins | playerIndex | frame | throwForFrame | expectedFrame | expectedPlayerIndex | nextMaxRoll | nextThrow | gameComplete | desc
+         3    | 0           | 1     | 1             | 1             | 0                   | 7           | 2         | false        | 'not next turn'
+         0    | 0           | 1     | 2             | 1             | 1                   | 10          | 1         | false        | 'is next turn'
+         9    | 1           | 1     | 2             | 2             | 0                   | 10          | 1         | false        | 'is next frame'
+         8    | 1           | 10    | 2             | 10            | 0                   | 10          | 1         | true         | 'last frame'
     }
 
     @Unroll
@@ -193,7 +215,7 @@ class GameServiceSpec extends Specification {
         RollEntity currentRoll = RollEntity.builder().pins(currPins).strike(currStrike).build()
 
         expect:
-        assert service.rollASpare(prevRoll, currentRoll) == isSpare
+        assert service.rollIsSpare(prevRoll, currentRoll) == isSpare
 
         where:
         prevStrike | prevPins | currStrike | currPins | isSpare
@@ -202,6 +224,20 @@ class GameServiceSpec extends Specification {
         false      | 0        | true       | 10       | false
         true       | 10       | false      | 0        | false
         false      | 1        | false      | 9        | true
+    }
+
+    @Unroll
+    def "should check if roll is valid"() {
+        expect:
+        assert service.rollIsValid(pins, nextMax) == expected
+
+        where:
+        nextMax | pins | expected
+        5       | 3    | true
+        10      | 10   | true
+        10      | 0    | true
+        1       | -1   | false
+        4       | 7    | false
     }
 
 }

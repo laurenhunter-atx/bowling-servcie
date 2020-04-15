@@ -31,9 +31,17 @@ public class GameEntity {
     @GeneratedValue
     private UUID id;
 
-    private int frame;
+    @Builder.Default
+    private int frame = 1;
 
-    private int currentPlayerIndex;
+    @Builder.Default
+    private int nextMaxRoll = 10;
+
+    @Builder.Default
+    private int nextThrowForFrame = 1;
+
+    @Builder.Default
+    private int currentPlayerIndex = 0;
 
     @Builder.Default
     private boolean isGameComplete = false;
