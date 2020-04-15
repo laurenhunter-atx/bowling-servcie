@@ -38,4 +38,12 @@ class BowlingServiceClient {
                         .content(objectMapper.writeValueAsString(game)))
                 .andDo(print()).andExpect(expectedStatus).andReturn().getResponse()
     }
+
+    MockHttpServletResponse getGame(UUID id, ResultMatcher expectedStatus = status().isOk()) {
+        return mvc.perform(
+                get("${baseUri}/game/${id}")
+                        .accept(APPLICATION_JSON)
+                        .contentType(APPLICATION_JSON))
+                .andDo(print()).andExpect(expectedStatus).andReturn().getResponse()
+    }
 }

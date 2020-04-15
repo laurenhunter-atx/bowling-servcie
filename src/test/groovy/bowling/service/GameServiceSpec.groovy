@@ -5,6 +5,10 @@ import bowling.exception.ValidationException
 import bowling.repository.GameRepository
 import spock.lang.Specification
 
+import javax.persistence.EntityNotFoundException
+
+import static bowling.ARandom.aRandom
+
 class GameServiceSpec extends Specification {
     private GameRepository repository
     private GameService service
@@ -20,5 +24,16 @@ class GameServiceSpec extends Specification {
 
         then:
         thrown(ValidationException)
+    }
+
+    def "should throw not found exception when no game does not exist"() {
+        given:
+        repository.findById(*_) >> Optional.empty()
+
+        when:
+        service.getGame(aRandom.uuid())
+
+        then:
+        thrown(EntityNotFoundException)
     }
 }
