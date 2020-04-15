@@ -1,6 +1,7 @@
 package bowling.controller;
 
 import bowling.api.Game;
+import bowling.api.Roll;
 import bowling.mapper.ApiModelMapper;
 import bowling.mapper.ModelMapper;
 import bowling.service.GameService;
@@ -20,12 +21,11 @@ import java.util.UUID;
 public class GameApiController {
     private final GameService gameService;
     private final ModelMapper modelMapper;
-    private final ApiModelMapper apiModelMapper;
 
     @PostMapping("/game")
     ResponseEntity<Game> createGame(@RequestBody Game game) {
         return new ResponseEntity<>(
-                apiModelMapper.toGame(gameService.createGame(modelMapper.toGameEntity(game))),
+                modelMapper.toGame(gameService.createGame(modelMapper.toGameEntity(game))),
                 HttpStatus.CREATED
         );
     }
@@ -33,8 +33,16 @@ public class GameApiController {
     @GetMapping("/game/{id}")
     ResponseEntity<Game> getGame(@PathVariable UUID id) {
         return new ResponseEntity<>(
-                apiModelMapper.toGame(gameService.getGame(id)),
+                modelMapper.toGame(gameService.getGame(id)),
                 HttpStatus.OK
+        );
+    }
+
+    @PostMapping("/game/{gameId}/player/{playerId}/roll")
+    ResponseEntity<Roll> roll(@PathVariable UUID gameId, @PathVariable UUID playerId, @RequestBody Roll roll) {
+        return new ResponseEntity<>(
+                modelMapper.toRoll(gameService.createRoll(gameId, playerId, modelMapper.toRollEntity(roll))),
+                HttpStatus.CREATED
         );
     }
 }

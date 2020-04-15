@@ -20,7 +20,7 @@ class GameServiceSpec extends Specification {
 
     def "should throw validation exception when no players exist for game"() {
         when:
-        service.createGame( GameEntity.builder().build())
+        service.createGame(GameEntity.builder().build())
 
         then:
         thrown(ValidationException)

@@ -1,6 +1,7 @@
 package bowling
 
 import bowling.api.Game
+import bowling.api.Roll
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.mock.web.MockHttpServletResponse
@@ -44,6 +45,15 @@ class BowlingServiceClient {
                 get("${baseUri}/game/${id}")
                         .accept(APPLICATION_JSON)
                         .contentType(APPLICATION_JSON))
+                .andDo(print()).andExpect(expectedStatus).andReturn().getResponse()
+    }
+
+    MockHttpServletResponse createRoll(UUID gameId, UUID playerId, Roll roll, ResultMatcher expectedStatus = status().isCreated()) {
+        return mvc.perform(
+                post("${baseUri}/game/${gameId}/player/${playerId}/roll")
+                        .accept(APPLICATION_JSON)
+                        .contentType(APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(roll)))
                 .andDo(print()).andExpect(expectedStatus).andReturn().getResponse()
     }
 }

@@ -1,6 +1,8 @@
 package bowling.service;
 
+import bowling.api.Roll;
 import bowling.entity.GameEntity;
+import bowling.entity.RollEntity;
 import bowling.exception.ValidationException;
 import bowling.repository.GameRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,12 +21,17 @@ public class GameService {
     @Transactional
     public GameEntity createGame(GameEntity game) {
         validateGame(game);
+        game.setFrame(1);
         game.setPlayers(game.getPlayers().stream().peek(player -> player.setGame(game)).collect(Collectors.toList()));
         return repository.save(game);
     }
 
     public GameEntity getGame(UUID id) {
         return repository.findById(id).orElseThrow(EntityNotFoundException::new);
+    }
+
+    public RollEntity createRoll(UUID gameId, UUID playerId, RollEntity rollEntity) {
+        return null;
     }
 
     private void validateGame(GameEntity game) {

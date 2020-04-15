@@ -19,7 +19,6 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@JsonIgnoreProperties({"player", "id"})
 public class RollEntity {
 
     @Id

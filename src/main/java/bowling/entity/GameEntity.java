@@ -22,7 +22,6 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@JsonIgnoreProperties({"currentPlayerIndex"})
 public class GameEntity {
 
     @Id
