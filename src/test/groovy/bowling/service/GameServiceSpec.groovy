@@ -89,6 +89,7 @@ class GameServiceSpec extends Specification {
                 .id(aRandom.uuid())
                 .players([player1])
                 .currentPlayerIndex(0)
+                .nextThrowForFrame(1)
                 .frame(1)
                 .build()
         gameRepository.findOneByIdForUpdate(*_) >> Optional.of(game)
@@ -111,7 +112,7 @@ class GameServiceSpec extends Specification {
 
         and:
         player1.setRolls([roll])
-        RollEntity roll2 = RollEntity.builder().frame(1).throwForFrame(1).pins(5).build()
+        RollEntity roll2 = RollEntity.builder().frame(1).throwForFrame(2).pins(5).build()
 
         when:
         service.roll(game.id, player1.id, roll2)
@@ -122,7 +123,7 @@ class GameServiceSpec extends Specification {
             assert saved.pins == 5
             assert saved.spare
             assert !saved.strike
-            assert saved.throwForFrame == 1
+            assert saved.throwForFrame == 2
             assert saved.frame == 1
         }
     }
@@ -153,13 +154,14 @@ class GameServiceSpec extends Specification {
         assert updatedGame.frame == expectedFrame
         assert updatedGame.currentPlayerIndex == expectedPlayerIndex
         assert updatedGame.nextMaxRoll == nextMaxRoll
+        assert updatedGame.nextThrowForFrame == nextThrow
 
         where:
-         pins | playerIndex | frame | throwForFrame | expectedFrame | expectedPlayerIndex | nextMaxRoll | gameComplete | desc
-         3    | 0           | 1     | 1             | 1             | 0                   | 7           | false        | 'not next turn'
-         0    | 0           | 1     | 2             | 1             | 1                   | 10          | false        | 'is next turn'
-         9    | 1           | 1     | 2             | 2             | 0                   | 10          | false        | 'is next frame'
-         8    | 1           | 10    | 2             | 10            | 0                   | 10          | true         | 'last frame'
+         pins | playerIndex | frame | throwForFrame | expectedFrame | expectedPlayerIndex | nextMaxRoll | nextThrow | gameComplete | desc
+         3    | 0           | 1     | 1             | 1             | 0                   | 7           | 2         | false        | 'not next turn'
+         0    | 0           | 1     | 2             | 1             | 1                   | 10          | 1         | false        | 'is next turn'
+         9    | 1           | 1     | 2             | 2             | 0                   | 10          | 1         | false        | 'is next frame'
+         8    | 1           | 10    | 2             | 10            | 0                   | 10          | 1         | true         | 'last frame'
     }
 
     @Unroll

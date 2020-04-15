@@ -38,6 +38,9 @@ public class GameEntity {
     private int nextMaxRoll = 10;
 
     @Builder.Default
+    private int nextThrowForFrame = 1;
+
+    @Builder.Default
     private int currentPlayerIndex = 0;
 
     @Builder.Default

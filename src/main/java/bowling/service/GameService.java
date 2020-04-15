@@ -25,6 +25,7 @@ public class GameService {
     public GameEntity createGame(GameEntity game) {
         validateGame(game);
         game.setFrame(1);
+        game.setNextThrowForFrame(1);
         game.setNextMaxRoll(10);
         game.setPlayers(game.getPlayers().stream().peek(player -> player.setGame(game)).collect(Collectors.toList()));
         return gameRepository.save(game);
@@ -37,7 +38,7 @@ public class GameService {
     public RollEntity roll(UUID gameId, UUID playerId, RollEntity roll) {
         GameEntity game = gameRepository.findOneByIdForUpdate(gameId).orElseThrow(EntityNotFoundException::new);
         PlayerEntity player = game.getPlayers().get(game.getCurrentPlayerIndex());
-        validateRoll(player, playerId, roll, game.getFrame(), game.getNextMaxRoll());
+        validateRoll(player, playerId, roll, game.getFrame(), game.getNextMaxRoll(), game.getNextThrowForFrame());
 
         List<RollEntity> playerRolls = player.getRolls();
         RollEntity previousRoll = playerRolls.isEmpty() ? RollEntity.builder().build() : playerRolls.get(playerRolls.size() - 1);
@@ -58,8 +59,10 @@ public class GameService {
             }
             game.setCurrentPlayerIndex(calculateNextPlayer(game.getPlayers(), game.getCurrentPlayerIndex()));
             game.setNextMaxRoll(10);
+            game.setNextThrowForFrame(1);
         } else {
             game.setNextMaxRoll(10 - roll.getPins());
+            game.setNextThrowForFrame(roll.getThrowForFrame() + 1);
         }
         return game;
     }
@@ -86,7 +89,8 @@ public class GameService {
         }
     }
 
-    private void validateRoll(PlayerEntity playerEntity, UUID playerId, RollEntity rollEntity, int frame, int nexMaxRoll) {
+    private void validateRoll(PlayerEntity playerEntity, UUID playerId, RollEntity rollEntity,
+                              int frame, int nexMaxRoll, int nextThrowForRoll) {
         if (!playerEntity.getId().equals(playerId)) {
             throw new ValidationException(String.format("wrong turn. it is %s's turn", playerEntity.getName()));
         }
@@ -97,6 +101,9 @@ public class GameService {
             throw new ValidationException(
                     String.format("roll not valid. roll needs to be greater than 0 and less than or equal to ", nexMaxRoll)
             );
+        }
+        if (rollEntity.getThrowForFrame() != nextThrowForRoll) {
+            throw new ValidationException(String.format("wrong throw for frame %d, on throw %d", frame, nextThrowForRoll));
         }
     }
 

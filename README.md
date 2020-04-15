@@ -24,6 +24,7 @@ curl https://localhost:8080/game/id
       "frame": 1,
       "currentPlayerId": "uuid",
       "nextMaxRoll": 10,
+      "nextThrowForFrame": 1,
       "isGameComplete": false,
       "players": [
           {

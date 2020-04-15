@@ -30,6 +30,7 @@ class GameApiControllerSpec extends BaseSpec {
         then:
         assert fetchedGame.frame == 1
         assert fetchedGame.nextMaxRoll == 10
+        assert fetchedGame.nextThrowForFrame == 1
         assert fetchedGame.currentPlayerId == fetchedGame.players.get(0).id
         assert fetchedGame.players.size() == 2
         assert fetchedGame.players.get(0).score == 0
@@ -67,13 +68,22 @@ class GameApiControllerSpec extends BaseSpec {
         noExceptionThrown()
 
         when: "wrong frame"
-        client.createRoll(createdGame.id, aRandom.uuid(), Roll.builder().frame(2).build(), status().isBadRequest())
+        Roll wrongFrame = Roll.builder().frame(2).build()
+        client.createRoll(createdGame.id, aRandom.uuid(), wrongFrame, status().isBadRequest())
 
         then:
         noExceptionThrown()
 
         when: "bad roll"
-        client.createRoll(createdGame.id, aRandom.uuid(), Roll.builder().pins(6).build(), status().isBadRequest())
+        Roll invalidPins = Roll.builder().pins(6).build()
+        client.createRoll(createdGame.id, aRandom.uuid(), invalidPins, status().isBadRequest())
+
+        then:
+        noExceptionThrown()
+
+        when: "wrong throw for frame"
+        Roll invalidThrowForFrame = Roll.builder().pins(5).throwForFrame(2).build()
+        client.createRoll(createdGame.id, aRandom.uuid(), invalidThrowForFrame, status().isBadRequest())
 
         then:
         noExceptionThrown()

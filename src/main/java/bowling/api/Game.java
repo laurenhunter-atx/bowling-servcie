@@ -16,6 +16,7 @@ public class Game {
     private UUID id;
     private int frame;
     private int nextMaxRoll;
+    private int nextThrowForFrame;
     private UUID currentPlayerId;
     private boolean isGameComplete;
     private List<Player> players;
