@@ -69,6 +69,7 @@ class GameServiceSpec extends Specification {
                 .id(aRandom.uuid())
                 .players([player1])
                 .currentPlayerIndex(0)
+                .frame(1)
                 .build()
         gameRepository.findOneByIdForUpdate(*_) >> Optional.of(game)
 
@@ -134,10 +135,11 @@ class GameServiceSpec extends Specification {
         assert updatedGame.currentPlayerIndex == expectedPlayerIndex
 
         where:
-        prevRollStrike | spare | strike | playerIndex | frame | throwForFrame | expectedFrame | expectedPlayerIndex | desc
-        false          | false | false  | 0           | 1     | 1             | 1             | 0                   | 'not next turn'
-        false          | false | false  | 0           | 1     | 2             | 1             | 1                   | 'is next turn'
-        false          | false | false  | 1           | 1     | 2             | 2             | 0                   | 'is next frame'
+        prevRollStrike | spare | strike | playerIndex | frame | throwForFrame | expectedFrame | expectedPlayerIndex | gameComplete | desc
+        false          | false | false  | 0           | 1     | 1             | 1             | 0                   | false        | 'not next turn'
+        false          | false | false  | 0           | 1     | 2             | 1             | 1                   | false        | 'is next turn'
+        false          | false | false  | 1           | 1     | 2             | 2             | 0                   | false        | 'is next frame'
+        false          | false | false  | 1           | 10    | 2             | 10            | 0                   | true         | 'last frame'
     }
 
     @Unroll
@@ -158,12 +160,13 @@ class GameServiceSpec extends Specification {
         0     | false            | 1             | false  | false | false  | '1st roll'
         0     | false            | 2             | false  | false | true   | '2nd roll'
         0     | false            | 1             | true   | false | true   | 'roll a strike'
-        10    | false            | 1             | false  | false | true   | '10th frame 1st roll'
-        10    | false            | 3             | false  | false | true   | '10th frame 3rd roll'
+        10    | false            | 3             | false  | false | true   | '10th frame 3rd roll no strike'
+        10    | true             | 3             | false  | false | true   | '10th frame 3rd roll strike'
         10    | false            | 2             | false  | false | true   | '10th frame 2nd roll no strike'
         10    | false            | 2             | false  | true  | false  | '10th frame 2nd roll spare'
         10    | false            | 2             | true   | false | false  | '10th frame 2nd roll strike'
         10    | true             | 2             | false  | false | false  | '10th frame 2nd roll & strike'
+        10    | true             | 1             | false  | false | false  | '10th frame 1nd roll & strike'
     }
 
     @Unroll
@@ -186,18 +189,19 @@ class GameServiceSpec extends Specification {
     @Unroll
     def "should compute if frame is spare"() {
         given:
-        RollEntity prevRoll = RollEntity.builder().pins(prevPins).build()
-        RollEntity currentRoll = RollEntity.builder().pins(currPins).build()
+        RollEntity prevRoll = RollEntity.builder().strike(prevStrike).pins(prevPins).build()
+        RollEntity currentRoll = RollEntity.builder().pins(currPins).strike(currStrike).build()
 
         expect:
-        assert service.isRollASpare(prevRoll, currentRoll) == isSpare
+        assert service.rollASpare(prevRoll, currentRoll) == isSpare
 
         where:
-        prevPins | currPins | isSpare
-        10       | 10       | false
-        1        | 1        | false
-        0        | 10       | true
-        1        | 9        | true
+        prevStrike | prevPins | currStrike | currPins | isSpare
+        true       | 10       | true       | 10       | false
+        false      | 1        | false      | 1        | false
+        false      | 0        | true       | 10       | false
+        true       | 10       | false      | 0        | false
+        false      | 1        | false      | 9        | true
     }
 
 }

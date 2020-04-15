@@ -35,6 +35,9 @@ public class GameEntity {
 
     private int currentPlayerIndex;
 
+    @Builder.Default
+    private boolean isGameComplete = false;
+
     @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<PlayerEntity> players;
 }

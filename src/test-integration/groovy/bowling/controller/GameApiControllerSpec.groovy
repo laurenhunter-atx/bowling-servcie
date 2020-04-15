@@ -59,59 +59,332 @@ class GameApiControllerSpec extends BaseSpec {
         Player player2 = Player.builder().name(aRandom.name().firstName()).build()
         Game game = Game.builder().players([player1, player2]).build()
         Game createdGame = client.responseToClass(client.createGame(game), Game.class)
+        UUID player1Id = createdGame.getPlayers().get(0).id
+        UUID player2Id = createdGame.getPlayers().get(1).id
 
-        and:
-        Roll roll = Roll.builder().pins(aRandom.intBetween(0, 9)).frame(1).throwForFrame(1).build()
+        and: "P1 frame 1 throw 1"
+        Roll roll = Roll.builder().pins(9).frame(1).throwForFrame(1).build()
 
         when:
-        client.createRoll(createdGame.id, createdGame.currentPlayerId, roll)
+        Roll updatedRoll = client.responseToClass(client.createRoll(createdGame.id, createdGame.currentPlayerId, roll), Roll.class)
         Game updatedGame = client.responseToClass(client.getGame(createdGame.id), Game.class)
 
         then:
+        assert !updatedRoll.strike
+        assert !updatedRoll.spare
         assert updatedGame.frame == 1
-        assert updatedGame.currentPlayerId == updatedGame.getPlayers().get(0).id
+        assert updatedGame.currentPlayerId == player1Id
 
-        and:
-        Roll roll2 = Roll.builder().pins(10 - roll.pins).frame(1).throwForFrame(2).build()
+        and: "P1 frame 1 throw 2"
+        Roll roll2 = Roll.builder().pins(1).frame(1).throwForFrame(2).build()
 
         when:
-        client.createRoll(createdGame.id, createdGame.currentPlayerId, roll2)
-        updatedGame = client.responseToClass(client.getGame(createdGame.id), Game.class)
+        updatedRoll = client.responseToClass(client.createRoll(createdGame.id, createdGame.currentPlayerId, roll2), Roll.class)
+        updatedGame = client.responseToClass(client.getGame(updatedGame.id), Game.class)
 
         then:
+        assert !updatedRoll.strike
+        assert updatedRoll.spare
         assert updatedGame.frame == 1
-        assert updatedGame.currentPlayerId == updatedGame.getPlayers().get(1).id
+        assert updatedGame.currentPlayerId == player2Id
+
+        and: "P2 frame 1 throw 1"
+        when:
+        updatedRoll = client.responseToClass(client.createRoll(updatedGame.id, updatedGame.currentPlayerId, strike(1)), Roll.class)
+        updatedGame = client.responseToClass(client.getGame(updatedGame.id), Game.class)
+
+        then:
+        assert updatedRoll.strike
+        assert !updatedRoll.spare
+        assert updatedGame.frame == 2
+        assert updatedGame.currentPlayerId == player1Id
+
+        and: "P1 frame 2 throw 1"
+        Roll roll4 = Roll.builder().pins(1).frame(2).throwForFrame(1).build()
+
+        when:
+        updatedRoll = client.responseToClass(client.createRoll(updatedGame.id, updatedGame.currentPlayerId, roll4), Roll.class)
+        updatedGame = client.responseToClass(client.getGame(updatedGame.id), Game.class)
+
+        then:
+        assert !updatedRoll.strike
+        assert !updatedRoll.spare
+        assert updatedGame.frame == 2
+        assert updatedGame.currentPlayerId == player1Id
+
+        and: "P1 frame 2 throw 2"
+        Roll roll5 = Roll.builder().pins(1).frame(2).throwForFrame(2).build()
+
+        when:
+        updatedRoll = client.responseToClass(client.createRoll(updatedGame.id, updatedGame.currentPlayerId, roll5), Roll.class)
+        updatedGame = client.responseToClass(client.getGame(updatedGame.id), Game.class)
+
+        then:
+        assert !updatedRoll.strike
+        assert !updatedRoll.spare
+        assert updatedGame.frame == 2
+        assert updatedGame.currentPlayerId == player2Id
+
+        and: "P2 frame 2 throw 1"
+        Roll roll6 = Roll.builder().pins(8).frame(2).throwForFrame(1).build()
+
+        when:
+        updatedRoll = client.responseToClass(client.createRoll(updatedGame.id, updatedGame.currentPlayerId, roll6), Roll.class)
+        updatedGame = client.responseToClass(client.getGame(updatedGame.id), Game.class)
+
+        then:
+        assert !updatedRoll.strike
+        assert !updatedRoll.spare
+        assert updatedGame.frame == 2
+        assert updatedGame.currentPlayerId == player2Id
+
+        and: "P2 frame 2 throw 2"
+        Roll roll7 = Roll.builder().pins(2).frame(2).throwForFrame(2).build()
+
+        when:
+        updatedRoll = client.responseToClass(client.createRoll(updatedGame.id, updatedGame.currentPlayerId, roll7), Roll.class)
+        updatedGame = client.responseToClass(client.getGame(updatedGame.id), Game.class)
+
+        then:
+        assert !updatedRoll.strike
+        assert updatedRoll.spare
+        assert updatedGame.frame == 3
+        assert updatedGame.currentPlayerId == player1Id
+
+        and: "P1 frame 3 throw 1"
+        when:
+        updatedRoll = client.responseToClass(client.createRoll(updatedGame.id, updatedGame.currentPlayerId, strike(3)), Roll.class)
+        updatedGame = client.responseToClass(client.getGame(updatedGame.id), Game.class)
+
+        then:
+        assert updatedRoll.strike
+        assert !updatedRoll.spare
+        assert updatedGame.frame == 3
+        assert updatedGame.currentPlayerId == player2Id
+
+        when: "P2 frame 3 throw 1"
+        updatedRoll = client.responseToClass(client.createRoll(updatedGame.id, updatedGame.currentPlayerId, strike(3)), Roll.class)
+        updatedGame = client.responseToClass(client.getGame(updatedGame.id), Game.class)
+
+        then:
+        assert updatedRoll.strike
+        assert !updatedRoll.spare
+        assert updatedGame.frame == 4
+        assert updatedGame.currentPlayerId == player1Id
+
+        when:"P1 frame 4 throw 1"
+        updatedRoll = client.responseToClass(client.createRoll(updatedGame.id, updatedGame.currentPlayerId, strike(4)), Roll.class)
+        updatedGame = client.responseToClass(client.getGame(updatedGame.id), Game.class)
+
+        then:
+        assert updatedRoll.strike
+        assert !updatedRoll.spare
+        assert updatedGame.frame == 4
+        assert updatedGame.currentPlayerId == player2Id
+
+        when: "P2 frame 4 throw 1"
+        updatedRoll = client.responseToClass(client.createRoll(updatedGame.id, updatedGame.currentPlayerId, strike(4)), Roll.class)
+        updatedGame = client.responseToClass(client.getGame(updatedGame.id), Game.class)
+
+        then:
+        assert updatedRoll.strike
+        assert !updatedRoll.spare
+        assert updatedGame.frame == 5
+        assert updatedGame.currentPlayerId == player1Id
+
+        when: "P1 frame 5 throw 1"
+        Roll roll12 = Roll.builder().pins(0).frame(5).throwForFrame(1).build()
+        updatedRoll = client.responseToClass(client.createRoll(updatedGame.id, updatedGame.currentPlayerId, roll12), Roll.class)
+        updatedGame = client.responseToClass(client.getGame(updatedGame.id), Game.class)
+
+        then:
+        assert !updatedRoll.strike
+        assert !updatedRoll.spare
+        assert updatedGame.frame == 5
+        assert updatedGame.currentPlayerId == player1Id
+
+        when: "P1 frame 5 throw 2"
+        Roll roll13 = Roll.builder().pins(0).frame(5).throwForFrame(2).build()
+        updatedRoll = client.responseToClass(client.createRoll(updatedGame.id, updatedGame.currentPlayerId, roll13), Roll.class)
+        updatedGame = client.responseToClass(client.getGame(updatedGame.id), Game.class)
+
+        then:
+        assert !updatedRoll.strike
+        assert !updatedRoll.spare
+        assert updatedGame.frame == 5
+        assert updatedGame.currentPlayerId == player2Id
+
+        when: "P2 frame 6 throw 1"
+        updatedRoll = client.responseToClass(client.createRoll(updatedGame.id, updatedGame.currentPlayerId, strike(5)), Roll.class)
+        updatedGame = client.responseToClass(client.getGame(updatedGame.id), Game.class)
+
+        then:
+        assert updatedRoll.strike
+        assert !updatedRoll.spare
+        assert updatedGame.frame == 6
+        assert updatedGame.currentPlayerId == player1Id
+
+        when: "P1 frame 6 throw 1"
+        updatedRoll = client.responseToClass(client.createRoll(updatedGame.id, updatedGame.currentPlayerId, strike(6)), Roll.class)
+        updatedGame = client.responseToClass(client.getGame(updatedGame.id), Game.class)
+
+        then:
+        assert updatedRoll.strike
+        assert !updatedRoll.spare
+        assert updatedGame.frame == 6
+        assert updatedGame.currentPlayerId == player2Id
+
+        when: "P2 frame 6 throw 1"
+        updatedRoll = client.responseToClass(client.createRoll(updatedGame.id, updatedGame.currentPlayerId, strike(6)), Roll.class)
+        updatedGame = client.responseToClass(client.getGame(updatedGame.id), Game.class)
+
+        then:
+        assert updatedRoll.strike
+        assert !updatedRoll.spare
+        assert updatedGame.frame == 7
+        assert updatedGame.currentPlayerId == player1Id
+
+        when: "P1 frame 7 throw 1"
+        Roll roll17 = Roll.builder().pins(5).frame(7).throwForFrame(1).build()
+        updatedRoll = client.responseToClass(client.createRoll(updatedGame.id, updatedGame.currentPlayerId, roll17), Roll.class)
+        updatedGame = client.responseToClass(client.getGame(updatedGame.id), Game.class)
+
+        then:
+        assert !updatedRoll.strike
+        assert !updatedRoll.spare
+        assert updatedGame.frame == 7
+        assert updatedGame.currentPlayerId == player1Id
+
+        when: "P1 frame 7 throw 2"
+        Roll roll18 = Roll.builder().pins(5).frame(7).throwForFrame(2).build()
+        updatedRoll = client.responseToClass(client.createRoll(updatedGame.id, updatedGame.currentPlayerId, roll18), Roll.class)
+        updatedGame = client.responseToClass(client.getGame(updatedGame.id), Game.class)
+
+        then:
+        assert !updatedRoll.strike
+        assert updatedRoll.spare
+        assert updatedGame.frame == 7
+        assert updatedGame.currentPlayerId == player2Id
+
+        when: "P2 frame 7 throw 1"
+        Roll roll19 = Roll.builder().pins(1).frame(7).throwForFrame(1).build()
+        updatedRoll = client.responseToClass(client.createRoll(updatedGame.id, updatedGame.currentPlayerId, roll19), Roll.class)
+        updatedGame = client.responseToClass(client.getGame(updatedGame.id), Game.class)
+
+        then:
+        assert !updatedRoll.strike
+        assert !updatedRoll.spare
+        assert updatedGame.frame == 7
+        assert updatedGame.currentPlayerId == player2Id
+
+        when: "P2 frame 7 throw 2"
+        Roll roll20 = Roll.builder().pins(2).frame(7).throwForFrame(2).build()
+        updatedRoll = client.responseToClass(client.createRoll(updatedGame.id, updatedGame.currentPlayerId, roll20), Roll.class)
+        updatedGame = client.responseToClass(client.getGame(updatedGame.id), Game.class)
+
+        then:
+        assert !updatedRoll.strike
+        assert !updatedRoll.spare
+        assert updatedGame.frame == 8
+        assert updatedGame.currentPlayerId == player1Id
+
+        when: "P1 frame 8 throw 1"
+        updatedRoll = client.responseToClass(client.createRoll(updatedGame.id, updatedGame.currentPlayerId, strike(8)), Roll.class)
+        updatedGame = client.responseToClass(client.getGame(updatedGame.id), Game.class)
+
+        then:
+        assert updatedRoll.strike
+        assert !updatedRoll.spare
+        assert updatedGame.frame == 8
+        assert updatedGame.currentPlayerId == player2Id
+
+        when: "P2 frame 8 throw 1"
+        updatedRoll = client.responseToClass(client.createRoll(updatedGame.id, updatedGame.currentPlayerId, strike(8)), Roll.class)
+        updatedGame = client.responseToClass(client.getGame(updatedGame.id), Game.class)
+
+        then:
+        assert updatedRoll.strike
+        assert !updatedRoll.spare
+        assert updatedGame.frame == 9
+        assert updatedGame.currentPlayerId == player1Id
+
+        when: "P1 frame 9 throw 1"
+        updatedRoll = client.responseToClass(client.createRoll(updatedGame.id, updatedGame.currentPlayerId, strike(9)), Roll.class)
+        updatedGame = client.responseToClass(client.getGame(updatedGame.id), Game.class)
+
+        then:
+        assert updatedRoll.strike
+        assert !updatedRoll.spare
+        assert updatedGame.frame == 9
+        assert updatedGame.currentPlayerId == player2Id
+
+        when: "P2 frame 9 throw 1"
+        updatedRoll = client.responseToClass(client.createRoll(updatedGame.id, updatedGame.currentPlayerId, strike(9)), Roll.class)
+        updatedGame = client.responseToClass(client.getGame(updatedGame.id), Game.class)
+
+        then:
+        assert updatedRoll.strike
+        assert !updatedRoll.spare
+        assert updatedGame.frame == 10
+        assert updatedGame.currentPlayerId == player1Id
+
+        when: "P1 frame 10 throw 1"
+        Roll roll25 = Roll.builder().pins(2).frame(10).throwForFrame(1).build()
+        updatedRoll = client.responseToClass(client.createRoll(updatedGame.id, updatedGame.currentPlayerId, roll25), Roll.class)
+        updatedGame = client.responseToClass(client.getGame(updatedGame.id), Game.class)
+
+        then:
+        assert !updatedRoll.strike
+        assert !updatedRoll.spare
+        assert updatedGame.frame == 10
+        assert updatedGame.currentPlayerId == player1Id
+
+        when: "P1 frame 10 throw 2"
+        Roll roll26 = Roll.builder().pins(2).frame(10).throwForFrame(2).build()
+        updatedRoll = client.responseToClass(client.createRoll(updatedGame.id, updatedGame.currentPlayerId, roll26), Roll.class)
+        updatedGame = client.responseToClass(client.getGame(updatedGame.id), Game.class)
+
+        then:
+        assert !updatedRoll.strike
+        assert !updatedRoll.spare
+        assert updatedGame.frame == 10
+        assert updatedGame.currentPlayerId == player2Id
+
+        when: "P2 frame 10 throw 1"
+        Roll roll27 = Roll.builder().pins(9).frame(10).throwForFrame(1).build()
+        updatedRoll = client.responseToClass(client.createRoll(updatedGame.id, updatedGame.currentPlayerId, roll27), Roll.class)
+        updatedGame = client.responseToClass(client.getGame(updatedGame.id), Game.class)
+
+        then:
+        assert !updatedRoll.strike
+        assert !updatedRoll.spare
+        assert updatedGame.frame == 10
+        assert updatedGame.currentPlayerId == player2Id
+
+        when: "P2 frame 10 throw 2"
+        Roll roll28 = Roll.builder().pins(1).frame(10).throwForFrame(2).build()
+        updatedRoll = client.responseToClass(client.createRoll(updatedGame.id, updatedGame.currentPlayerId, roll28), Roll.class)
+        updatedGame = client.responseToClass(client.getGame(updatedGame.id), Game.class)
+
+        then:
+        assert !updatedRoll.strike
+        assert updatedRoll.spare
+        assert updatedGame.frame == 10
+        assert updatedGame.currentPlayerId == player2Id
+
+        when: "P2 frame 10 throw 3"
+        Roll roll29 = Roll.builder().pins(5).frame(10).throwForFrame(3).build()
+        updatedRoll = client.responseToClass(client.createRoll(updatedGame.id, updatedGame.currentPlayerId, roll29), Roll.class)
+        updatedGame = client.responseToClass(client.getGame(updatedGame.id), Game.class)
+
+        then:
+        assert !updatedRoll.strike
+        assert !updatedRoll.spare
+        assert updatedGame.frame == 10
+        assert updatedGame.gameComplete
     }
 
-    def "should play game"() {
-        given:
-        Player player1 = Player.builder().name(aRandom.name().firstName()).build()
-        Game game = Game.builder().players([player1]).build()
-        Game createdGame = client.responseToClass(client.createGame(game), Game.class)
-
-        and:
-        Roll roll = Roll.builder().pins(5).frame(1).throwForFrame(1).build()
-
-        when: "frame 1 roll 1 - 5"
-        client.createRoll(createdGame.id, createdGame.currentPlayerId, roll)
-        Game updatedGame = client.responseToClass(client.getGame(createdGame.id), Game.class)
-
-        then:
-        assert updatedGame.frame == 1
-        assert updatedGame.currentPlayerId == updatedGame.getPlayers().get(0).id
-        assert updatedGame.getPlayers().get(0).rolls == [roll]
-        assert updatedGame.getPlayers().get(0).score == 0
-
-        and:
-        Roll roll2 = Roll.builder().pins(3).frame(1).throwForFrame(2).build()
-
-        when: "frame 1 roll 2 - 3"
-        client.createRoll(createdGame.id, createdGame.currentPlayerId, roll2)
-        updatedGame = client.responseToClass(client.getGame(createdGame.id), Game.class)
-
-        then:
-        assert updatedGame.frame == 2
-        assert updatedGame.getPlayers().get(0).rolls == [roll, roll2]
-        assert updatedGame.getPlayers().get(0).score == 5 + 3
+    def strike(int frame) {
+        return Roll.builder().pins(10).frame(frame).throwForFrame(1).build()
     }
 }

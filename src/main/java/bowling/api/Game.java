@@ -16,5 +16,6 @@ public class Game {
     private UUID id;
     private int frame;
     private UUID currentPlayerId;
+    private boolean isGameComplete;
     private List<Player> players;
 }
