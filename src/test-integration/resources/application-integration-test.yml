@@ -1,0 +1,22 @@
+server:
+  host: localhost
+  port: 8088
+
+db:
+  name: bowling_service_test
+  user: postgres
+  password: password
+  host: "${postgresDocker.host}"
+  port: ${postgresDocker.tcp.5432}
+
+
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${db.host}:${db.port}/${db.name}
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  main.banner-mode: "off"
