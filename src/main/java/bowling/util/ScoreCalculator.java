@@ -3,17 +3,14 @@ package bowling.util;
 import bowling.api.Roll;
 import lombok.experimental.UtilityClass;
 import org.springframework.util.ObjectUtils;
+import static bowling.util.RollType.LAST_ROLL;
+import static bowling.util.RollType.STRIKE;
+import static bowling.util.RollType.SPARE;
 
 import java.util.List;
 
 @UtilityClass
 public class ScoreCalculator {
-    private final static int FIRST_THROW_FOR_FRAME = 1;
-    private final static int SECOND_THROW_FOR_FRAME = 1;
-    private final static int LAST_ROLL = 3;
-    private final static int STRIKE = 4;
-    private final static int SPARE = 5;
-
     /*
         Starting from the last roll and moving towards the first roll,
         compute frame score if available. Store "future rolls" for in order
@@ -27,18 +24,19 @@ public class ScoreCalculator {
         Roll secondFutureRoll = null;
         for(int i = rolls.size() - 1; i >= 0; i--) {
             Roll roll = rolls.get(i);
-            int rollType = rollType(roll);
+            RollType rollType = rollType(roll);
             score += canCalculateFrame(rollType, firstFutureRoll, secondFutureRoll) ?
                     calculateRollForFrame(rollType, roll, firstFutureRoll, secondFutureRoll) : 0;
 
             // Set "secondFuture roll" on LAST ROLL so can calculate any strikes in last frame
-            secondFutureRoll = rollType == LAST_ROLL ? roll : firstFutureRoll;
+            secondFutureRoll = rollType.equals(LAST_ROLL) ? roll : firstFutureRoll;
             firstFutureRoll = roll;
         }
         return score;
     }
 
-    private boolean canCalculateFrame(int rollType, Roll firstFutureRoll, Roll secondFutureRoll) {
+    // TODO - add tests for this
+    private boolean canCalculateFrame(RollType rollType, Roll firstFutureRoll, Roll secondFutureRoll) {
         switch (rollType) {
             case STRIKE:
                return !ObjectUtils.isEmpty(firstFutureRoll) && !ObjectUtils.isEmpty(secondFutureRoll);
@@ -51,7 +49,8 @@ public class ScoreCalculator {
         }
     }
 
-    private int calculateRollForFrame(int rollType, Roll roll, Roll firstFutureRoll, Roll secondFutureRoll) {
+    // TODO -- add tests for this
+    private int calculateRollForFrame(RollType rollType, Roll roll, Roll firstFutureRoll, Roll secondFutureRoll) {
         switch (rollType) {
             case STRIKE:
                 return lastFrame(roll) ? roll.getPins() : 10 + firstFutureRoll.getPins() + secondFutureRoll.getPins();
@@ -62,11 +61,12 @@ public class ScoreCalculator {
         }
     }
 
-    private int rollType(Roll roll) {
-        return  lastRoll(roll) ? LAST_ROLL :
+    // TODO -- add tests for this
+    private RollType rollType(Roll roll) {
+        return  lastRoll(roll) ? RollType.LAST_ROLL :
                 roll.isSpare() ? SPARE :
                         roll.isStrike() ? STRIKE :
-                                roll.getThrowForFrame();
+                                RollType.get(roll.getThrowForFrame());
     }
 
     private boolean lastFrame(Roll roll) {
@@ -74,6 +74,6 @@ public class ScoreCalculator {
     }
 
     private boolean lastRoll(Roll roll) {
-        return roll.getThrowForFrame() == LAST_ROLL;
+        return RollType.get(roll.getThrowForFrame()).equals(LAST_ROLL);
     }
 }
