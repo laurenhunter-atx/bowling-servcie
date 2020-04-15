@@ -1,6 +1,5 @@
 package bowling.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -28,6 +27,8 @@ public class RollEntity {
     @ManyToOne
     private PlayerEntity player;
 
+    private boolean strike;
+    private boolean spare;
     private int pins;
     private int frame;
     private int throwForFrame;

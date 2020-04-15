@@ -2,7 +2,6 @@ package bowling.controller;
 
 import bowling.api.Game;
 import bowling.api.Roll;
-import bowling.mapper.ApiModelMapper;
 import bowling.mapper.ModelMapper;
 import bowling.service.GameService;
 import lombok.RequiredArgsConstructor;
@@ -41,7 +40,7 @@ public class GameApiController {
     @PostMapping("/game/{gameId}/player/{playerId}/roll")
     ResponseEntity<Roll> roll(@PathVariable UUID gameId, @PathVariable UUID playerId, @RequestBody Roll roll) {
         return new ResponseEntity<>(
-                modelMapper.toRoll(gameService.createRoll(gameId, playerId, modelMapper.toRollEntity(roll))),
+                modelMapper.toRoll(gameService.roll(gameId, playerId, modelMapper.toRollEntity(roll))),
                 HttpStatus.CREATED
         );
     }

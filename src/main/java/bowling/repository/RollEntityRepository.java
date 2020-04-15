@@ -1,9 +1,9 @@
 package bowling.repository;
 
-import bowling.entity.GameEntity;
+import bowling.entity.RollEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.UUID;
 
-public interface GameRepository extends JpaRepository<GameEntity, UUID> {
+public interface RollEntityRepository extends JpaRepository<RollEntity, UUID> {
 }

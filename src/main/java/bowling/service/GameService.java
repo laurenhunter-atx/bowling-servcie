@@ -1,42 +1,92 @@
 package bowling.service;
 
-import bowling.api.Roll;
 import bowling.entity.GameEntity;
+import bowling.entity.PlayerEntity;
 import bowling.entity.RollEntity;
 import bowling.exception.ValidationException;
-import bowling.repository.GameRepository;
+import bowling.repository.GameEntityRepository;
+import bowling.repository.RollEntityRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityNotFoundException;
+import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
 public class GameService {
-    private final GameRepository repository;
+    private final GameEntityRepository gameRepository;
+    private final RollEntityRepository rollRepository;
 
     @Transactional
     public GameEntity createGame(GameEntity game) {
         validateGame(game);
         game.setFrame(1);
         game.setPlayers(game.getPlayers().stream().peek(player -> player.setGame(game)).collect(Collectors.toList()));
-        return repository.save(game);
+        return gameRepository.save(game);
     }
 
     public GameEntity getGame(UUID id) {
-        return repository.findById(id).orElseThrow(EntityNotFoundException::new);
+        return gameRepository.findById(id).orElseThrow(EntityNotFoundException::new);
     }
 
-    public RollEntity createRoll(UUID gameId, UUID playerId, RollEntity rollEntity) {
-        return null;
+    public RollEntity roll(UUID gameId, UUID playerId, RollEntity roll) {
+        GameEntity game = gameRepository.findOneByIdForUpdate(gameId).orElseThrow(EntityNotFoundException::new);
+        PlayerEntity player = game.getPlayers().get(game.getCurrentPlayerIndex());
+
+        validateRoll(player, playerId);
+        roll.setPlayer(player);
+
+        gameRepository.save(updateGameStateForRoll(game, roll, prevRollIsStrike(player.getRolls())));
+        return rollRepository.save(roll);
+    }
+
+    private GameEntity updateGameStateForRoll(GameEntity game, RollEntity roll, boolean prevRollIsStrike) {
+        if (isNextPlayersTurn(roll, prevRollIsStrike)) {
+            if (!isLastFrame(game.getFrame()) && isNextFrame(game.getPlayers(), game.getCurrentPlayerIndex())) {
+                game.setFrame(game.getFrame() + 1);
+            }
+            game.setCurrentPlayerIndex(calculateNextPlayer(game.getPlayers(), game.getCurrentPlayerIndex()));
+        }
+        return game;
+    }
+
+    private boolean isNextFrame(List<PlayerEntity> players, int currentPlayerIndex) {
+        return currentPlayerIndex == players.size() - 1;
+    }
+
+    private boolean isNextPlayersTurn(RollEntity roll, boolean previousRollIsStrike) {
+        int throwForFrame = roll.getThrowForFrame();
+        if (isLastFrame(roll.getFrame())) {
+            return !(throwForFrame == 2 && (previousRollIsStrike || roll.isSpare() || roll.isStrike()));
+        }
+        return roll.isStrike() || throwForFrame == 2;
+    }
+
+    private int calculateNextPlayer(List<PlayerEntity> players, int currentPlayerIndex) {
+        return currentPlayerIndex < players.size() - 1 ? currentPlayerIndex + 1 : 0;
     }
 
     private void validateGame(GameEntity game) {
         if (game.getPlayers() == null) {
             throw new ValidationException("you need to add some players to the game");
         }
+    }
+
+    private void validateRoll(PlayerEntity playerEntity, UUID playerId) {
+        if (!playerEntity.getId().equals(playerId)) {
+            throw new ValidationException(String.format("wrong turn. it is %s's turn", playerEntity.getName()));
+        }
+    }
+
+    private boolean isLastFrame(int frame) {
+        return frame == 10;
+    }
+
+    private boolean prevRollIsStrike(List<RollEntity> rolls) {
+        return !rolls.isEmpty() && rolls.get(rolls.size() - 1).isStrike();
     }
 }
