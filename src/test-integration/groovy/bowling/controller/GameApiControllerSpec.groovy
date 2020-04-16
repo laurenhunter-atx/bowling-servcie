@@ -418,6 +418,12 @@ class GameApiControllerSpec extends BaseSpec {
         assert !updatedRoll.spare
         assert updatedGame.frame == 10
         assert updatedGame.gameComplete
+
+        when: "try to roll after game over"
+        client.createRoll(updatedGame.id, updatedGame.currentPlayerId, strike(10), status().isBadRequest())
+
+        then:
+        noExceptionThrown()
     }
 
     def strike(int frame) {

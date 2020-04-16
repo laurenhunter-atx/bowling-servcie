@@ -44,6 +44,26 @@ class GameServiceSpec extends Specification {
         thrown(EntityNotFoundException)
     }
 
+    def "should throw validation exception when game is over"() {
+        given:
+        PlayerEntity player1 = PlayerEntity.builder().id(aRandom.uuid()).build()
+        PlayerEntity player2 = PlayerEntity.builder().id(aRandom.uuid()).build()
+        GameEntity game = GameEntity.builder()
+                .id(aRandom.uuid())
+                .frame(10)
+                .isGameComplete(true)
+                .currentPlayerIndex(0)
+                .players([player1, player2])
+                .build()
+        gameRepository.findOneByIdForUpdate(*_) >> Optional.of(game)
+
+        when:
+        service.roll(game.id, player1.id, RollEntity.builder().build())
+
+        then:
+        thrown(ValidationException)
+    }
+
     def "should throw validation exception when wrong player for roll"() {
         given:
         PlayerEntity player1 = PlayerEntity.builder().id(aRandom.uuid()).build()

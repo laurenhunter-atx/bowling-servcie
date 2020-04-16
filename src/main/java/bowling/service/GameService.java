@@ -1,5 +1,6 @@
 package bowling.service;
 
+import bowling.api.Game;
 import bowling.entity.GameEntity;
 import bowling.entity.PlayerEntity;
 import bowling.entity.RollEntity;
@@ -38,7 +39,7 @@ public class GameService {
     public RollEntity roll(UUID gameId, UUID playerId, RollEntity roll) {
         GameEntity game = gameRepository.findOneByIdForUpdate(gameId).orElseThrow(EntityNotFoundException::new);
         PlayerEntity player = game.getPlayers().get(game.getCurrentPlayerIndex());
-        validateRoll(player, playerId, roll, game.getFrame(), game.getNextMaxRoll(), game.getNextThrowForFrame());
+        validateRoll(player, playerId, roll, game);
 
         List<RollEntity> playerRolls = player.getRolls();
         RollEntity previousRoll = playerRolls.isEmpty() ? RollEntity.builder().build() : playerRolls.get(playerRolls.size() - 1);
@@ -89,21 +90,23 @@ public class GameService {
         }
     }
 
-    private void validateRoll(PlayerEntity playerEntity, UUID playerId, RollEntity rollEntity,
-                              int frame, int nexMaxRoll, int nextThrowForRoll) {
+    private void validateRoll(PlayerEntity playerEntity, UUID playerId, RollEntity rollEntity, GameEntity game) {
+        if (game.isGameComplete()) {
+            throw new ValidationException("Game is over. Start new game.");
+        }
         if (!playerEntity.getId().equals(playerId)) {
             throw new ValidationException(String.format("wrong turn. it is %s's turn", playerEntity.getName()));
         }
-        if (rollEntity.getFrame() != frame) {
-            throw new ValidationException(String.format("wrong frame. current frame is ", frame));
+        if (rollEntity.getFrame() != game.getFrame()) {
+            throw new ValidationException(String.format("wrong frame. current frame is ", game.getFrame()));
         }
-        if(!rollIsValid(rollEntity.getPins(), nexMaxRoll)) {
+        if(!rollIsValid(rollEntity.getPins(), game.getNextMaxRoll())) {
             throw new ValidationException(
-                    String.format("roll not valid. roll needs to be greater than 0 and less than or equal to ", nexMaxRoll)
+                    String.format("roll not valid. roll needs to be greater than 0 and less than or equal to ", game.getNextMaxRoll())
             );
         }
-        if (rollEntity.getThrowForFrame() != nextThrowForRoll) {
-            throw new ValidationException(String.format("wrong throw for frame %d, on throw %d", frame, nextThrowForRoll));
+        if (rollEntity.getThrowForFrame() != game.getNextThrowForFrame()) {
+            throw new ValidationException(String.format("wrong throw for frame %d, on throw %d", game.getFrame(), game.getNextThrowForFrame()));
         }
     }
 
